@@ -43,8 +43,10 @@ export default function Index() {
           Lorem ipsum dolor sit, amet consectetur adipisicing elit.
         </Text>
       </View>
-      <View style={{ position: "absolute", width: "100%", bottom: 25, padding:20 }}>
-        <Button title={"Get Started"} onPress={() => console.log('Pressed')}/>
+      <View
+        style={{ position: "absolute", width: "100%", bottom: 25, padding: 20 }}
+      >
+        <Button title={"Get Started"} onPress={() => console.log("Pressed")} />
       </View>
     </View>
   );
