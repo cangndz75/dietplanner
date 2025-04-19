@@ -1,14 +1,19 @@
 import { View, Text, Image, Alert } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Input from "../../components/shared/Input";
 import Button from "../../components/shared/Button";
 import { useRouter } from "expo-router";
 import { auth } from "../../services/FirebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { UserContext } from "../../context/UserContext";
 export default function SignUp() {
   const [name, setName] = useState();
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
+  const createNewUser = useMutation(api.Users.CreateNewUser)
+  const {user, setUser} = useContext(UserContext);
   const router = useRouter();
   const onSignUp = () => {
     if (!name || !email || !password) {
@@ -16,9 +21,18 @@ export default function SignUp() {
       return;
     }
     createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
+      .then(async (userCredential) => {
         const user = userCredential.user;
         console.log(user);
+        if(user) {
+          const result = await createNewUser({
+            email: email,
+            name: name,
+          });
+
+          console.log(result);
+          setUser(result);
+        }
       })
       .catch((error) => {
         const errorCode = error.code;
