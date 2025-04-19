@@ -21,7 +21,7 @@ export const CreateNewUser = mutation({
         ...data,
       });
 
-      return data;
+      return { _id: result, ...data };
     }
     return user[0];
   },
@@ -38,5 +38,24 @@ export const GetUser = query({
       .collect();
 
     return user[0];
+  },
+});
+
+export const UpdateUserPref = mutation({
+  args: {
+    uid: v.id("users"),
+    height: v.string(),
+    weight: v.string(),
+    gender: v.string(),
+    goal: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const result = await ctx.db.patch(args.uid, {
+      height: args.height,
+      weight: args.weight,
+      gender: args.gender,
+      goal: args.goal,
+    });
+    return result;
   },
 });
