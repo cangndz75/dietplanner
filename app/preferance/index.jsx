@@ -22,12 +22,15 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { UserContext } from "../../context/UserContext";
 import { useRouter } from "expo-router";
+import { CalculateCaloriesAI } from "../../services/AiModel";
+import { CALORIES_PROMPT } from "../../shared/Prompt";
 
 export default function Preferance() {
   const [weight, setWeight] = React.useState("");
   const [height, setHeight] = React.useState("");
   const [gender, setGender] = React.useState("");
   const [goal, setGoal] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
   const { user, setUser } = useContext(UserContext);
   const router = useRouter();
 
@@ -39,22 +42,52 @@ export default function Preferance() {
       return;
     }
 
-    const data = {
-      uid: user._id,
-      weight: weight,
-      height: height,
-      gender: gender,
-      goal: goal,
-    };
-    const result = await UpdateUserPref({
-      ...data,
-    });
+    try {
+      setLoading(true);
+      const data = {
+        uid: user._id,
+        weight: weight,
+        height: height,
+        gender: gender,
+        goal: goal,
+      };
 
-    setUser(prev => ({
+      const PROMPT = JSON.stringify(data) + CALORIES_PROMPT;
+      console.log("Prompt gönderiliyor:", PROMPT);
+
+      const AIResult = await CalculateCaloriesAI(PROMPT);
+      console.log("AI Result:", AIResult);
+
+      const AIResp = AIResult.choices[0].message.content;
+      console.log("AI Response content:", AIResp);
+
+      const startIndex = AIResp.indexOf("{");
+      const endIndex = AIResp.lastIndexOf("}");
+      const onlyJson = AIResp.substring(startIndex, endIndex + 1);
+
+      const JSONContent = JSON.parse(onlyJson);
+      console.log("Parsed JSON:", JSONContent);
+
+      const result = await UpdateUserPref({
+        ...data,
+        ...JSONContent,
+      });
+
+      console.log("Convex Update Success:", result);
+
+      setUser((prev) => ({
         ...prev,
         ...data,
-    }))
-    router.replace("/(tabs)/Home");
+        ...JSONContent,
+      }));
+
+      router.replace("/(tabs)/Home");
+    } catch (error) {
+      console.error("onContinue HATASI:", error);
+      Alert.alert("Something went wrong", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -166,7 +199,11 @@ export default function Preferance() {
         </TouchableOpacity>
       </View>
       <View style={{ marginTop: 25 }}>
-        <Button title={"Continue"} onPress={onContinue} />
+        {loading ? (
+          <Button title="Loading..." disabled={true} />
+        ) : (
+          <Button title="Continue" onPress={onContinue} />
+        )}
       </View>
     </View>
   );
